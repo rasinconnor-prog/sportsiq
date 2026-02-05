@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sports IQ – Daily Challenge</title>
+
+  <!-- SEO & Social -->
+  <meta name="description" content="Test your sports knowledge with daily picks. Real odds, real games, real results.">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Sports IQ">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Sports IQ – Daily Challenge">
+  <meta property="og:description" content="Test your sports knowledge with daily picks. Real odds, real games, real results.">
+  <meta property="og:type" content="website">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Onboarding Overlay -->
+  <div class="onboarding-overlay hidden" id="onboarding-overlay">
+    <div class="onboarding-container">
+      <button class="onboarding-skip" id="onboarding-skip">Skip</button>
+
+      <div class="onboarding-slides" id="onboarding-slides">
+        <!-- Step 1 -->
+        <div class="onboarding-slide active" data-step="1">
+          <div class="onboarding-icon">🎯</div>
+          <h1>Welcome to SportsIQ</h1>
+          <p>SportsIQ is a free daily sports prediction game.<br><br>Everyone gets the <strong>SAME picks</strong> each day.</p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="onboarding-slide" data-step="2">
+          <div class="onboarding-icon">📊</div>
+          <h1>Make Your Picks</h1>
+          <p>Two types of picks:<br><br>
+            <strong>Player Props:</strong> OVER / UNDER / PASS<br>
+            <strong>Spread Picks:</strong> TEAM A / TEAM B / PASS</p>
+        </div>
+
+        <!-- Step 3: Scoring -->
+        <div class="onboarding-slide" data-step="3">
+          <div class="onboarding-icon">📊</div>
+          <h1>Scoring</h1>
+          <p>
+            <strong>+10 pts</strong> for each correct pick<br>
+            <strong>+15 pts</strong> bonus for perfect card<br>
+            <strong>+5 pts</strong> bonus for 4/5 correct
+          </p>
+        </div>
+
+        <!-- Step 4: Lock of the Day -->
+        <div class="onboarding-slide" data-step="4">
+          <div class="onboarding-icon">🔒</div>
+          <h1>Lock of the Day</h1>
+          <p>Pick <strong>ONE</strong> selection as your Lock.<br><br>
+            <strong>Correct Lock = +5 pts</strong><br>
+            <span class="onboarding-mode-note">In Competitive Mode:<br>Wrong Lock = <strong>-5 pts</strong></span>
+          </p>
+        </div>
+
+        <!-- Step 5: Compete -->
+        <div class="onboarding-slide" data-step="5">
+          <div class="onboarding-icon">🏆</div>
+          <h1>Choose Your Mode</h1>
+          <p>
+            <strong>Classic:</strong> Safe & steady<br>
+            <strong>Competitive:</strong> Risk/reward<br><br>
+            Change anytime in Settings!
+          </p>
+        </div>
+      </div>
+
+      <div class="onboarding-footer">
+        <div class="onboarding-dots" id="onboarding-dots">
+          <span class="dot active" data-step="1"></span>
+          <span class="dot" data-step="2"></span>
+          <span class="dot" data-step="3"></span>
+          <span class="dot" data-step="4"></span>
+          <span class="dot" data-step="5"></span>
+        </div>
+
+        <button class="onboarding-btn" id="onboarding-next">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <p>Loading today's games...</p>
+  </div>
+
+  <div class="app">
+    <!-- ========================================
+         HEADER
+         ======================================== -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">SPORTS IQ</div>
+        <div class="streak-indicator hidden" id="streak-indicator">
+          <span class="fire">🔥</span>
+          <span class="streak-count" id="streak-count">0</span>
+        </div>
+        <!-- H2H Mode Indicator -->
+        <div class="h2h-mode-indicator hidden" id="h2h-mode-indicator">
+          <span>⚔️</span>
+          <span id="h2h-current-player">Player 1</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="coin-display">
+          <span class="coin-icon">🪙</span>
+          <span class="coin-count" id="coin-count">0</span>
+        </div>
+        <div class="level-badge" id="level-badge">
+          <span class="level-num">1</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========================================
+         XP BAR
+         ======================================== -->
+    <div class="xp-bar-container">
+      <div class="xp-bar">
+        <div class="xp-fill" id="xp-fill" style="width: 0%"></div>
+      </div>
+      <span class="xp-text" id="xp-text">0 / 100 XP</span>
+    </div>
+
+    <!-- H2H Scoreboard (shown in H2H mode) -->
+    <div class="h2h-scoreboard hidden" id="h2h-scoreboard">
+      <!-- Generated by JS -->
+    </div>
+
+    <!-- ========================================
+         MAIN VIEWS
+         ======================================== -->
+
+    <!-- PLAY VIEW -->
+    <main class="view active" id="play-view">
+      <!-- Submission Status Banner -->
+      <div class="submission-status-banner" id="submission-status-banner">
+        <div class="status-banner-content" id="status-banner-content">
+          <span class="status-banner-icon">📋</span>
+          <span class="status-banner-text">Make your picks and submit before games begin</span>
+        </div>
+      </div>
+
+      <!-- Daily Card Header -->
+      <div class="daily-header">
+        <div class="daily-title">
+          <h1>Daily Card <button class="how-to-play-btn" id="how-to-play-btn">?</button></h1>
+          <p class="daily-date" id="daily-date">February 2, 2026</p>
+          <span class="odds-badge" id="odds-badge">Lines Powered By TheOddsAPI (Demo Mode)</span>
+          <span class="scoring-mode-badge" id="scoring-mode-badge" title="Click to change scoring mode">
+            <span class="mode-badge-icon">📊</span>
+            <span class="mode-badge-text">Classic</span>
+          </span>
+        </div>
+        <div class="daily-progress">
+          <span class="progress-text"><span id="picks-made">0</span>/7</span>
+          <div class="mini-progress">
+            <div class="mini-fill" id="mini-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Results Banner -->
+      <div class="pending-banner hidden" id="pending-banner">
+        <div class="pending-content">
+          <span class="pending-icon">🕐</span>
+          <span class="pending-text" id="pending-text">Results pending – check back after games end</span>
+        </div>
+      </div>
+
+      <!-- Pending Picks Section -->
+      <div class="pending-picks-section hidden" id="pending-picks-section">
+        <div class="pending-picks-header">
+          <h3>📋 Your Picks</h3>
+          <span class="pending-picks-status" id="pending-picks-status">0/7 resolved</span>
+        </div>
+        <div class="pending-picks-list" id="pending-picks-list">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- Testing Mode Panel -->
+      <div class="testing-panel" id="testing-panel">
+        <div class="testing-header">
+          <span>🧪 Testing Mode</span>
+          <button class="testing-toggle" id="testing-toggle">Hide</button>
+        </div>
+        <div class="testing-actions">
+          <button class="testing-btn primary" id="simulate-eod-btn">
+            <span>🏁</span> Simulate End of Day
+          </button>
+          <div class="testing-row">
+            <button class="testing-btn secondary" id="resolve-all-btn">
+              <span>⚡</span> Resolve All
+            </button>
+            <button class="testing-btn secondary" id="resolve-random-btn">
+              <span>🎲</span> Resolve One
+            </button>
+          </div>
+          <button class="testing-btn tertiary" id="reset-today-btn">
+            <span>🔄</span> Reset Today's Card
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Summary (shown after graded) -->
+      <div class="results-summary hidden" id="results-summary">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Pick Cards Container -->
+      <div class="picks-container" id="picks-container">
+        <!-- Cards will be generated by JS -->
+      </div>
+
+      <!-- Submit Button (Always Visible) -->
+      <div class="submit-section" id="submit-section">
+        <button class="submit-picks-btn disabled" id="submit-picks-btn" disabled>
+          <span class="submit-btn-text">SUBMIT PICKS</span>
+        </button>
+        <p class="submit-helper-text" id="submit-helper-text">Select all 7 picks to submit</p>
+      </div>
+
+      <!-- Submitted State (replaces button after submission) -->
+      <div class="submitted-section hidden" id="submitted-section">
+        <div class="submitted-btn-display">
+          <span class="submitted-checkmark">✓</span>
+          <span class="submitted-btn-text">Card Submitted</span>
+        </div>
+        <div class="submitted-picks-summary" id="submitted-picks-summary">
+          <!-- Summary of picks -->
+        </div>
+      </div>
+
+      <!-- Results State (when graded) -->
+      <div class="results-state hidden" id="results-state">
+        <div class="results-card">
+          <div class="results-score" id="results-score">
+            <span class="score-num">5</span>
+            <span class="score-label">/7 Correct</span>
+          </div>
+          <div class="results-rewards" id="results-rewards">
+            <div class="reward-item">
+              <span class="reward-icon">⭐</span>
+              <span class="reward-value">+50 XP</span>
+            </div>
+            <div class="reward-item">
+              <span class="reward-icon">🪙</span>
+              <span class="reward-value">+25 Coins</span>
+            </div>
+          </div>
+          <button class="continue-btn" id="continue-btn">Continue</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- COMPETE VIEW -->
+    <div class="view" id="compete-view">
+      <div class="compete-header">
+        <h1>Compete</h1>
+      </div>
+
+      <!-- Leaderboard Tabs -->
+      <div class="lb-tabs">
+        <button class="lb-tab active" data-tab="daily">Today</button>
+        <button class="lb-tab" data-tab="weekly">Week</button>
+        <button class="lb-tab" data-tab="monthly">Month</button>
+        <button class="lb-tab" data-tab="allTime">All-Time</button>
+      </div>
+
+      <!-- Your Stats Card (shown when user has entry) -->
+      <div class="your-stats-card" id="your-stats-card">
+        <div class="your-rank">
+          <span class="rank-hash">#</span>
+          <span class="rank-num" id="your-rank-num">--</span>
+        </div>
+        <div class="your-info">
+          <span class="your-name" id="your-lb-name">You</span>
+          <span class="your-score" id="your-lb-score">0/0 picks</span>
+        </div>
+        <div class="your-accuracy" id="your-lb-accuracy">--%</div>
+      </div>
+
+      <!-- No Entry Card (shown when user hasn't submitted) -->
+      <div class="no-entry-card hidden" id="no-entry-card">
+        <div class="no-entry-icon">📋</div>
+        <div class="no-entry-content">
+          <p class="no-entry-text">Make today's picks to join the leaderboard</p>
+          <button class="no-entry-btn" id="no-entry-btn">Go to Daily Card</button>
+        </div>
+      </div>
+
+      <!-- Leaderboard Info -->
+      <div class="leaderboard-info-row">
+        <p class="leaderboard-info">Ranked by Accuracy %</p>
+        <button class="leaderboard-info-btn" id="leaderboard-info-btn">
+          <span class="info-icon">ⓘ</span>
+        </button>
+      </div>
+
+      <!-- Leaderboard Table -->
+      <div class="leaderboard-table">
+        <!-- Table Header -->
+        <div class="lb-header">
+          <span class="lb-header-rank">#</span>
+          <span class="lb-header-player">Player</span>
+          <span class="lb-header-picks">Correct</span>
+          <span class="lb-header-accuracy">Accuracy</span>
+        </div>
+
+        <!-- Leaderboard Rows -->
+        <div class="leaderboard" id="leaderboard">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- Head-to-Head Section -->
+      <div class="h2h-section" id="h2h-main">
+        <div class="h2h-header">
+          <h2>⚔️ Head-to-Head</h2>
+          <span class="h2h-record" id="h2h-record">0W - 0L</span>
+        </div>
+
+        <div class="h2h-active" id="h2h-active">
+          <p class="empty-h2h">No active challenges</p>
+        </div>
+
+        <button class="h2h-btn" id="h2h-create-btn">
+          <span>⚔️</span> New Challenge
+        </button>
+      </div>
+
+      <!-- H2H Create View -->
+      <div class="h2h-create hidden" id="h2h-create">
+        <div class="h2h-create-header">
+          <button class="h2h-back" id="h2h-back-btn">← Back</button>
+          <h2>New Challenge</h2>
+        </div>
+
+        <div class="h2h-options">
+          <!-- Challenge a Friend (Link Share) -->
+          <button class="h2h-option featured" id="h2h-friend-link-btn">
+            <span class="h2h-option-icon">🔗</span>
+            <div class="h2h-option-text">
+              <span class="h2h-option-title">Challenge a Friend</span>
+              <span class="h2h-option-desc">Generate a link to share</span>
+            </div>
+          </button>
+
+          <!-- Local 2-Player Mode -->
+          <button class="h2h-option" id="h2h-local-btn">
+            <span class="h2h-option-icon">👥</span>
+            <div class="h2h-option-text">
+              <span class="h2h-option-title">Local 2-Player</span>
+              <span class="h2h-option-desc">Play head-to-head on this device</span>
+            </div>
+          </button>
+
+          <button class="h2h-option" id="h2h-random-btn">
+            <span class="h2h-option-icon">🎲</span>
+            <div class="h2h-option-text">
+              <span class="h2h-option-title">Random Opponent</span>
+              <span class="h2h-option-desc">Match with another player</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Friend Challenge Link Modal -->
+      <div class="friend-challenge-modal hidden" id="friend-challenge-modal">
+        <div class="friend-challenge-content">
+          <button class="friend-challenge-close" id="friend-challenge-close">&times;</button>
+
+          <div class="friend-challenge-icon">🔗</div>
+          <h2>Challenge Created!</h2>
+          <p class="friend-challenge-desc">Share this link with a friend to compete head-to-head on today's picks.</p>
+
+          <div class="friend-challenge-link-box">
+            <input type="text" id="friend-challenge-link" readonly>
+            <button class="copy-link-btn" id="copy-challenge-link">Copy</button>
+          </div>
+
+          <div class="friend-challenge-or">or</div>
+
+          <button class="share-challenge-btn" id="share-challenge-btn">
+            <span>📤</span> Share via...
+          </button>
+
+          <p class="friend-challenge-note">Your friend has until games start to join. Winner announced tomorrow!</p>
+        </div>
+      </div>
+
+      <!-- Active Friend Challenge Banner -->
+      <div class="friend-challenge-banner hidden" id="friend-challenge-banner">
+        <div class="challenge-banner-content">
+          <div class="challenge-banner-info">
+            <span class="challenge-banner-icon">⚔️</span>
+            <div class="challenge-banner-text">
+              <span class="challenge-banner-title">Active Challenge</span>
+              <span class="challenge-banner-opponent">vs <span id="challenge-opponent-name">Friend</span></span>
+            </div>
+          </div>
+          <div class="challenge-banner-status" id="challenge-banner-status">
+            Waiting for picks...
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Challenges Section -->
+      <div class="h2h-challenges-section" id="h2h-challenges">
+        <div class="h2h-challenges-header">
+          <h3>⚔️ Recent H2H</h3>
+        </div>
+        <div class="h2h-challenges-list" id="h2h-challenges-list">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- Friends Section -->
+      <div class="friends-section">
+        <div class="friends-header">
+          <h2>👥 Friends</h2>
+          <button class="add-friend-btn">+ Add</button>
+        </div>
+        <div class="friends-list" id="friends-list">
+          <p class="empty-friends">Add friends to see their stats</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="profile-view">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">
+          <span class="avatar-level">Lv.<span id="avatar-level">1</span></span>
+        </div>
+        <div class="profile-info">
+          <h1 class="profile-name" id="profile-name">Player</h1>
+          <p class="profile-joined">Joined <span id="joined-date">Feb 2026</span></p>
+        </div>
+      </div>
+
+      <!-- Level Progress -->
+      <div class="level-progress-card">
+        <div class="level-info">
+          <span class="level-label">Level <span id="profile-level">1</span></span>
+          <span class="level-xp" id="profile-xp">0 / 100 XP</span>
+        </div>
+        <div class="level-bar">
+          <div class="level-fill" id="level-fill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value" id="stat-accuracy">--%</span>
+          <span class="stat-label">Accuracy</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-correct">0</span>
+          <span class="stat-label">Correct Picks</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-streak">0</span>
+          <span class="stat-label">Best Streak</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-perfect">0</span>
+          <span class="stat-label">Perfect Days</span>
+        </div>
+      </div>
+
+      <!-- Enhanced Stats Section -->
+      <div class="enhanced-stats-section">
+        <h2>Performance</h2>
+
+        <!-- Last 7 Days -->
+        <div class="stats-card-full">
+          <div class="stats-card-header">
+            <span class="stats-card-title">📊 Last 7 Days</span>
+            <span class="stats-card-value" id="last-7-accuracy">--%</span>
+          </div>
+          <div class="last-7-days" id="last-7-days">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Win Streak -->
+        <div class="stats-card-full">
+          <div class="stats-card-header">
+            <span class="stats-card-title">🔥 Current Streak</span>
+            <span class="stats-card-value" id="current-streak">0</span>
+          </div>
+          <div class="streak-bar-container">
+            <div class="streak-bar" id="streak-bar" style="width: 0%"></div>
+          </div>
+          <div class="streak-info">
+            <span>Best: <strong id="best-streak-val">0</strong></span>
+            <span>Day Streak: <strong id="day-streak-val">0</strong></span>
+          </div>
+        </div>
+
+        <!-- Best Daily Score -->
+        <div class="stats-card-full">
+          <div class="stats-card-header">
+            <span class="stats-card-title">🏆 Best Daily Score</span>
+            <span class="stats-card-value highlight" id="best-daily-score">0/7</span>
+          </div>
+        </div>
+
+        <!-- Accuracy by Sport -->
+        <div class="stats-card-full">
+          <div class="stats-card-header">
+            <span class="stats-card-title">🎯 Accuracy by Sport</span>
+          </div>
+          <div class="sport-accuracy-list" id="sport-accuracy-list">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+
+        <!-- Accuracy by Market -->
+        <div class="stats-card-full">
+          <div class="stats-card-header">
+            <span class="stats-card-title">📈 Accuracy by Market</span>
+          </div>
+          <div class="market-accuracy-list" id="market-accuracy-list">
+            <!-- Generated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges Section -->
+      <div class="badges-section">
+        <h2>Badges</h2>
+        <div class="badges-grid" id="badges-grid">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="history-section">
+        <h2>Recent Cards</h2>
+        <div class="history-list" id="profile-history">
+          <p class="empty-history">No history yet. Play today's card!</p>
+        </div>
+      </div>
+
+      <!-- Settings Section -->
+      <div class="settings-section">
+        <h2>Settings</h2>
+        <div class="settings-list">
+          <div class="setting-row">
+            <span>Username</span>
+            <input type="text" id="username-input" value="Player" maxlength="15">
+          </div>
+
+          <!-- Scoring Mode Setting -->
+          <div class="setting-row scoring-mode-setting">
+            <div class="setting-label-group">
+              <span>Scoring Mode</span>
+              <span class="setting-hint" id="scoring-mode-hint">Standard scoring</span>
+            </div>
+            <div class="scoring-mode-toggle" id="scoring-mode-toggle">
+              <button class="mode-btn active" data-mode="classic">Classic</button>
+              <button class="mode-btn" data-mode="competitive">Competitive</button>
+            </div>
+          </div>
+
+          <!-- Scoring Mode Info Card -->
+          <div class="scoring-mode-info" id="scoring-mode-info">
+            <div class="mode-info-header">
+              <span class="mode-info-icon" id="mode-info-icon">📊</span>
+              <span class="mode-info-title" id="mode-info-title">Classic Mode</span>
+            </div>
+            <p class="mode-info-desc" id="mode-info-desc">Standard scoring. No penalties for wrong picks.</p>
+            <div class="mode-info-rules" id="mode-info-rules">
+              <div class="mode-rule"><span>✅ Correct Pick</span><span class="rule-value positive">+10</span></div>
+              <div class="mode-rule"><span>❌ Wrong Pick</span><span class="rule-value neutral">0</span></div>
+              <div class="mode-rule"><span>🔒 Lock Correct</span><span class="rule-value positive">+5</span></div>
+              <div class="mode-rule" id="lock-wrong-rule"><span>🔓 Lock Wrong</span><span class="rule-value neutral">0</span></div>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span>Sound Effects</span>
+            <label class="toggle">
+              <input type="checkbox" id="sound-toggle" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <button class="settings-link-btn" id="howtoplay-link-btn">
+            <span class="settings-link-icon">📖</span>
+            <span class="settings-link-text">How to Play</span>
+            <span class="settings-link-arrow">→</span>
+          </button>
+          <button class="reset-btn" id="reset-btn">Reset All Data</button>
+          <button class="debug-toggle-btn" id="show-debug-btn">🛠️ Show Debug Panel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW TO PLAY VIEW -->
+    <div class="view" id="howtoplay-view">
+      <div class="howtoplay-page">
+        <!-- Header -->
+        <div class="howtoplay-header">
+          <button class="howtoplay-back" id="howtoplay-back">
+            <span>←</span>
+          </button>
+          <h1>How SportsIQ Works</h1>
+        </div>
+
+        <!-- Content -->
+        <div class="howtoplay-content">
+          <!-- Section 1: Daily Game -->
+          <div class="howtoplay-section">
+            <div class="howtoplay-section-icon">📅</div>
+            <h2>Daily Game</h2>
+            <p>Every day all users receive the same set of picks. New cards are released each morning with real games from the NBA, NFL, NHL, and MLB.</p>
+          </div>
+
+          <!-- Section 2: Making Picks -->
+          <div class="howtoplay-section">
+            <div class="howtoplay-section-icon">🎯</div>
+            <h2>Making Picks</h2>
+            <p>Two types of picks appear on your daily card:</p>
+
+            <div class="howtoplay-pick-type">
+              <h3>📈 Player Props</h3>
+              <p class="pick-type-desc">Predict if a player's stat will go over or under the line</p>
+              <div class="howtoplay-options">
+                <div class="howtoplay-option over">
+                  <span class="option-name">OVER</span>
+                  <span class="option-desc">Stat exceeds the line</span>
+                </div>
+                <div class="howtoplay-option under">
+                  <span class="option-name">UNDER</span>
+                  <span class="option-desc">Stat stays under the line</span>
+                </div>
+                <div class="howtoplay-option pass">
+                  <span class="option-name">PASS</span>
+                  <span class="option-desc">Skip (0 pts)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="howtoplay-pick-type">
+              <h3>🏀 Spread Picks</h3>
+              <p class="pick-type-desc">Choose which team will cover the point spread</p>
+              <div class="howtoplay-options spread-options">
+                <div class="howtoplay-option team-a">
+                  <span class="option-name">TEAM A</span>
+                  <span class="option-desc">Covers the spread</span>
+                </div>
+                <div class="howtoplay-option team-b">
+                  <span class="option-name">TEAM B</span>
+                  <span class="option-desc">Covers the spread</span>
+                </div>
+                <div class="howtoplay-option pass">
+                  <span class="option-name">PASS</span>
+                  <span class="option-desc">Skip (0 pts)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Scoring -->
+          <div class="howtoplay-section">
+            <div class="howtoplay-section-icon">📊</div>
+            <h2>Scoring</h2>
+            <div class="howtoplay-scoring">
+              <div class="scoring-row">
+                <span class="scoring-label">✅ Correct pick</span>
+                <span class="scoring-value positive">+10 pts</span>
+              </div>
+              <div class="scoring-row">
+                <span class="scoring-label">❌ Incorrect pick</span>
+                <span class="scoring-value neutral">0 pts</span>
+              </div>
+              <div class="scoring-row">
+                <span class="scoring-label">🔄 Push (tie)</span>
+                <span class="scoring-value neutral">0 pts</span>
+              </div>
+              <div class="scoring-divider"></div>
+              <div class="scoring-row bonus">
+                <span class="scoring-label">🏆 Perfect card (5/5)</span>
+                <span class="scoring-value positive">+15 pts</span>
+              </div>
+              <div class="scoring-row bonus">
+                <span class="scoring-label">🎖️ Near perfect (4/5)</span>
+                <span class="scoring-value positive">+5 pts</span>
+              </div>
+              <div class="scoring-row bonus">
+                <span class="scoring-label">🔒 Lock correct</span>
+                <span class="scoring-value positive">+5 pts</span>
+              </div>
+              <div class="scoring-row" id="htp-lock-wrong-row">
+                <span class="scoring-label">🔓 Lock wrong</span>
+                <span class="scoring-value neutral" id="htp-lock-wrong-value">0 pts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Scoring Modes -->
+          <div class="howtoplay-section">
+            <div class="howtoplay-section-icon">⚙️</div>
+            <h2>Scoring Modes</h2>
+            <p>Choose your play style in Settings:</p>
+
+            <div class="howtoplay-modes">
+              <div class="howtoplay-mode-card classic">
+                <div class="mode-card-header">
+                  <span class="mode-card-icon">📊</span>
+                  <span class="mode-card-title">Classic Mode</span>
+                </div>
+                <p class="mode-card-desc">Safe and steady. No penalties for wrong picks.</p>
+                <div class="mode-card-rules">
+                  <span>Lock Correct: <strong>+5</strong></span>
+                  <span>Lock Wrong: <strong>0</strong></span>
+                </div>
+              </div>
+
+              <div class="howtoplay-mode-card competitive">
+                <div class="mode-card-header">
+                  <span class="mode-card-icon">⚡</span>
+                  <span class="mode-card-title">Competitive Mode</span>
+                </div>
+                <p class="mode-card-desc">Higher risk, higher reward. Wrong locks cost points!</p>
+                <div class="mode-card-rules">
+                  <span>Lock Correct: <strong>+5</strong></span>
+                  <span class="penalty">Lock Wrong: <strong>-5</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <p class="howtoplay-mode-note">Your current mode: <strong id="htp-current-mode">Classic</strong></p>
+          </div>
+
+          <!-- Section 4: Competition -->
+          <div class="howtoplay-section">
+            <div class="howtoplay-section-icon">🏆</div>
+            <h2>Competition</h2>
+            <p>Climb the leaderboards and prove your sports knowledge! Compete on:</p>
+            <div class="howtoplay-leaderboards">
+              <div class="leaderboard-type">
+                <span class="lb-icon">📆</span>
+                <span class="lb-name">Daily</span>
+              </div>
+              <div class="leaderboard-type">
+                <span class="lb-icon">📅</span>
+                <span class="lb-name">Weekly</span>
+              </div>
+              <div class="leaderboard-type">
+                <span class="lb-icon">🗓️</span>
+                <span class="lb-name">Monthly</span>
+              </div>
+              <div class="leaderboard-type">
+                <span class="lb-icon">👑</span>
+                <span class="lb-name">All-Time</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Lock of the Day -->
+          <div class="howtoplay-section highlight">
+            <div class="howtoplay-section-icon">🔒</div>
+            <h2>Lock of the Day</h2>
+            <p>Choose ONE pick as your "Lock of the Day" for bonus points.</p>
+            <div class="lock-rules-box">
+              <div class="lock-rule success">
+                <span>✅ Lock Correct</span>
+                <strong>+5 pts</strong>
+              </div>
+              <div class="lock-rule" id="htp-lock-penalty-rule">
+                <span>❌ Lock Wrong</span>
+                <strong id="htp-lock-penalty-value">0 pts</strong>
+              </div>
+            </div>
+            <p class="lock-mode-warning hidden" id="htp-lock-warning">
+              ⚠️ <strong>Competitive Mode:</strong> Wrong locks cost you -5 points!
+            </p>
+          </div>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="howtoplay-cta">
+          <button class="howtoplay-start-btn" id="howtoplay-start-btn">
+            Start Today's Picks
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================
+         BOTTOM NAV
+         ======================================== -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="play">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-label">Play</span>
+      </button>
+      <button class="nav-item" data-view="compete">
+        <span class="nav-icon">🏆</span>
+        <span class="nav-label">Compete</span>
+      </button>
+      <button class="nav-item" data-view="profile">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Profile</span>
+      </button>
+    </nav>
+
+    <!-- ========================================
+         OVERLAYS / MODALS
+         ======================================== -->
+
+    <!-- Confetti Container -->
+    <div class="confetti-container hidden" id="confetti-container"></div>
+
+    <!-- Level Up Modal -->
+    <div class="modal hidden" id="levelup-modal">
+      <div class="modal-content levelup">
+        <div class="levelup-icon">🎉</div>
+        <h2>Level Up!</h2>
+        <p class="levelup-level">Level <span id="new-level">2</span></p>
+        <button class="modal-btn" onclick="closeModal('levelup-modal')">Awesome!</button>
+      </div>
+    </div>
+
+    <!-- Level Progress Bottom Sheet -->
+    <div class="level-sheet hidden" id="level-sheet">
+      <div class="level-sheet-backdrop"></div>
+      <div class="level-sheet-content">
+        <!-- Handle bar -->
+        <div class="level-sheet-handle"></div>
+
+        <!-- Header -->
+        <div class="level-sheet-header">
+          <h2>Level Progress</h2>
+          <button class="level-sheet-close" id="level-sheet-close">&times;</button>
+        </div>
+
+        <!-- Current Level Hero -->
+        <div class="level-hero">
+          <div class="level-ring-container">
+            <svg class="level-ring-svg" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6"/>
+                  <stop offset="50%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#a855f7"/>
+                </linearGradient>
+              </defs>
+              <circle class="level-ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="level-ring-progress" cx="60" cy="60" r="52" id="level-ring-progress"/>
+            </svg>
+            <div class="level-ring-center">
+              <span class="level-ring-number" id="modal-level-num">1</span>
+              <span class="level-ring-label">LEVEL</span>
+            </div>
+          </div>
+          <div class="level-xp-details">
+            <div class="xp-progress-text">
+              <span class="xp-current" id="modal-xp-current">0</span>
+              <span class="xp-separator">/</span>
+              <span class="xp-target" id="modal-xp-target">100</span>
+              <span class="xp-unit">XP</span>
+            </div>
+            <p class="xp-label">to reach Level <span id="modal-next-level">2</span></p>
+          </div>
+        </div>
+
+        <!-- Level Grid -->
+        <div class="level-grid-section">
+          <h3 class="level-grid-title">All Levels</h3>
+          <div class="level-grid" id="level-grid">
+            <!-- Generated by JS: 25 level cards -->
+          </div>
+        </div>
+
+        <!-- Level Tooltip (hidden by default) -->
+        <div class="level-tooltip hidden" id="level-tooltip">
+          <div class="tooltip-content">
+            <span class="tooltip-level">Level 5</span>
+            <span class="tooltip-xp">850 XP needed</span>
+            <span class="tooltip-reward">Unlocks: Bronze Border 🥉</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Badge Earned Modal -->
+    <div class="modal hidden" id="badge-modal">
+      <div class="modal-content badge-earned">
+        <div class="badge-icon" id="earned-badge-icon">🏆</div>
+        <h2>Badge Earned!</h2>
+        <p class="badge-name" id="earned-badge-name">First Pick</p>
+        <button class="modal-btn" onclick="closeModal('badge-modal')">Nice!</button>
+      </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal hidden" id="submit-confirm-modal">
+      <div class="modal-content submit-confirm">
+        <div class="submit-confirm-icon">🔒</div>
+        <h2>Ready to lock in your card?</h2>
+        <p class="submit-confirm-warning">You cannot change picks after submitting.</p>
+        <div class="submit-confirm-buttons">
+          <button class="confirm-submit-btn" id="confirm-submit-btn">Confirm Submission</button>
+          <button class="cancel-submit-btn" id="cancel-submit-btn">Go Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- How To Play Modal -->
+    <div class="modal hidden" id="how-to-play-modal">
+      <div class="modal-content how-to-play">
+        <div class="modal-header">
+          <h2>How SportsIQ Works</h2>
+          <button class="modal-close" onclick="closeModal('how-to-play-modal')">&times;</button>
+        </div>
+        <div class="rules-list">
+          <div class="rule-item">
+            <span class="rule-icon">📋</span>
+            <span class="rule-text">Each day you get <strong>ONE Daily Card</strong> with 5 picks</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">📈</span>
+            <span class="rule-text">Player Props: <strong>Over / Under</strong> (or Pass)</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🏀</span>
+            <span class="rule-text">Spread Picks: <strong>Team A / Team B</strong> (or Pass)</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">✅</span>
+            <span class="rule-text">Each correct pick = <strong>10 points</strong></span>
+          </div>
+          <div class="rule-item highlight">
+            <span class="rule-icon">🏆</span>
+            <span class="rule-text">Perfect card bonus = <strong>+15 points</strong></span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🎖️</span>
+            <span class="rule-text">4/5 correct bonus = <strong>+5 points</strong></span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🔒</span>
+            <span class="rule-text">Lock of the Day correct = <strong>+5 points</strong></span>
+          </div>
+          <div class="rule-item dynamic-lock-wrong" id="modal-lock-wrong-rule">
+            <span class="rule-icon">🔓</span>
+            <span class="rule-text">Lock of the Day wrong = <strong id="modal-lock-wrong-value">0 points</strong></span>
+          </div>
+          <div class="rule-item muted">
+            <span class="rule-icon">🔄</span>
+            <span class="rule-text">Push = <strong>no points</strong></span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">📊</span>
+            <span class="rule-text">Rankings based on <strong>total daily points</strong></span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">🆓</span>
+            <span class="rule-text">New contest every day – <strong>free to play</strong></span>
+          </div>
+        </div>
+        <button class="modal-btn" onclick="closeModal('how-to-play-modal')">Got It!</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="scoring.js"></script>
+  <script src="api.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
