@@ -19,6 +19,15 @@ SportsIQ is a free daily sports prediction game built as a static frontend appli
 - `manifest.json` - PWA manifest
 - `server.js` - Static file server for Replit
 
+## Features
+### Testing Mode (Feb 2026)
+- Toggle via Debug Panel > "Toggle Testing Mode" button
+- Isolates all picks/stats to separate localStorage key (`sportsiq_testing_state`)
+- Guards on `recordPickResult`, `finalizeCard`, `awardBadge` prevent stat contamination
+- Today/Tomorrow tab bar appears when testing mode is active
+- Tomorrow's card fetches ESPN data with `?dates=` query parameter
+- Production state is snapshotted on toggle-on and restored on toggle-off
+
 ## Running Locally
 The app is served by `server.js` on port 5000. The workflow "Start application" handles this automatically.
 
