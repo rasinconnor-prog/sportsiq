@@ -425,6 +425,29 @@ const COIN_CONFIG = {
 };
 
 // ========================================
+// DAILY CHALLENGES
+// ========================================
+const DAILY_CHALLENGES = [
+  { id: 'sweep',        name: 'Clean Sweep',  desc: 'Get 7/7 correct',                icon: '🧹', xp: 75,  coins: 50 },
+  { id: 'lock_win',     name: 'Lock It In',   desc: 'Win your Lock of the Day',       icon: '🔐', xp: 30,  coins: 25 },
+  { id: 'no_pass',      name: 'All In',       desc: 'Submit without using PASS',       icon: '🎰', xp: 25,  coins: 20 },
+  { id: 'streak_3',     name: 'Hot Hand',     desc: 'Hit 3+ picks in a row',           icon: '✋', xp: 20,  coins: 15 },
+  { id: 'five_correct', name: 'High Five',    desc: 'Get at least 5/7 correct',        icon: '🖐️', xp: 20,  coins: 15 },
+  { id: 'underdog',     name: 'Underdog Day', desc: 'Win 3+ spread picks',             icon: '🐕', xp: 30,  coins: 25 },
+  { id: 'multi_sport',  name: 'Well Rounded', desc: 'Get correct picks in 2+ sports',  icon: '🌐', xp: 25,  coins: 20 }
+];
+
+function getDailyChallenges(dateStr) {
+  const seed = dateStr.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const shuffled = [...DAILY_CHALLENGES].sort((a, b) => {
+    const valA = (seed * 31 + a.id.charCodeAt(0) * 17) % 97;
+    const valB = (seed * 31 + b.id.charCodeAt(0) * 17) % 97;
+    return valA - valB;
+  });
+  return shuffled.slice(0, 3);
+}
+
+// ========================================
 // BADGES (Expanded)
 // ========================================
 const BADGES = {
@@ -498,6 +521,7 @@ function getDefaultUserState() {
         bestDayStreak: 0,
         lockOfDayWins: 0,
         bestDailyScore: 0,
+        challengesCompleted: 0,
         bySport: {},
         byMarket: {}
       },
@@ -524,7 +548,8 @@ function getDefaultUserState() {
       submittedAt: null,
       graded: false,
       gradedAt: null,
-      score: null
+      score: null,
+      challenges: [] // Array of { id, completed }
     },
 
     // History

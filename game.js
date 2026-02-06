@@ -74,7 +74,8 @@ class SportsIQ {
         submittedAt: null,
         graded: false,
         gradedAt: null,
-        score: null
+        score: null,
+        challenges: []
       };
     }
 
@@ -102,6 +103,11 @@ class SportsIQ {
     if (!state.stats.allTime.lockOfDayWins) state.stats.allTime.lockOfDayWins = 0;
     if (!state.stats.allTime.bySport) state.stats.allTime.bySport = {};
     if (!state.stats.allTime.byMarket) state.stats.allTime.byMarket = {};
+    if (state.stats.allTime.challengesCompleted === undefined) state.stats.allTime.challengesCompleted = 0;
+
+    if (!state.today.challenges || !Array.isArray(state.today.challenges)) {
+      state.today.challenges = [];
+    }
     if (!state.stats.allTime.bestDailyScore) state.stats.allTime.bestDailyScore = 0;
 
     // Scoring mode preference (default to classic)
@@ -431,6 +437,11 @@ class SportsIQ {
         status: PICK_STATUS.UNSELECTED,
         isLockOfDay: false
       }));
+      this.saveState();
+    }
+    if (!this.state.today.challenges || this.state.today.challenges.length === 0) {
+      const dailyChallenges = getDailyChallenges(this.state.today.date);
+      this.state.today.challenges = dailyChallenges.map(c => ({ id: c.id, completed: false }));
       this.saveState();
     }
   }
@@ -783,6 +794,7 @@ class SportsIQ {
     this.updateSubmitButton();
     this.updateCardState();
     this.renderPendingPicks();
+    this.renderChallenges();
     this.renderH2HScoreboard();
     this.updateScoringModeUI();
   }
@@ -1257,6 +1269,39 @@ class SportsIQ {
             <span class="pending-status-text">${statusText}</span>
             <span class="pending-time">${gameStatus.text}</span>
           </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderChallenges() {
+    const container = document.getElementById('challenges-list');
+    const progressEl = document.getElementById('challenges-progress');
+    if (!container) return;
+
+    const challenges = this.state.today.challenges || [];
+    if (challenges.length === 0) {
+      container.innerHTML = '<p class="challenges-empty">No challenges today</p>';
+      if (progressEl) progressEl.textContent = '0/0';
+      return;
+    }
+
+    const completedCount = challenges.filter(c => c.completed).length;
+    if (progressEl) progressEl.textContent = `${completedCount}/${challenges.length}`;
+
+    container.innerHTML = challenges.map(ch => {
+      const def = DAILY_CHALLENGES.find(d => d.id === ch.id);
+      if (!def) return '';
+      const done = ch.completed;
+      return `
+        <div class="challenge-item ${done ? 'completed' : ''}">
+          <span class="challenge-icon">${def.icon}</span>
+          <div class="challenge-info">
+            <span class="challenge-name">${def.name}</span>
+            <span class="challenge-desc">${def.desc}</span>
+          </div>
+          <span class="challenge-status">${done ? '✅' : '⬜'}</span>
+          ${done ? `<span class="challenge-reward">+${def.xp}XP +${def.coins}C</span>` : ''}
         </div>
       `;
     }).join('');
@@ -1963,6 +2008,17 @@ class SportsIQ {
     if (this.state.level >= 10) this.awardBadge('level_10');
     if (this.state.level >= 15) this.awardBadge('level_15');
 
+    const challengeResult = this.checkDailyChallenges(scoreResult);
+    xpEarned += challengeResult.xp;
+    coinsEarned += challengeResult.coins;
+    this.state.xp += challengeResult.xp;
+    this.state.coins += challengeResult.coins;
+
+    const postChallengeLevel = getLevelFromXp(this.state.xp);
+    if (postChallengeLevel > this.state.level) {
+      this.state.level = postChallengeLevel;
+    }
+
     this.state.history.unshift({
       date: this.state.today.date,
       picks: [...this.state.today.picks],
@@ -1970,7 +2026,8 @@ class SportsIQ {
       isPerfect: isPerfect,
       lockWon: lockWon,
       xpEarned: xpEarned,
-      coinsEarned: coinsEarned
+      coinsEarned: coinsEarned,
+      challengesCompleted: challengeResult.completed.map(c => c.id)
     });
 
     this.saveState();
@@ -1995,6 +2052,76 @@ class SportsIQ {
     if (bySport.MLB?.correct >= 50) this.awardBadge('mlb_specialist');
     if (bySport.PROP?.correct >= 25) this.awardBadge('prop_master');
     if (byMarket.spread?.correct >= 50) this.awardBadge('spread_king');
+  }
+
+  checkDailyChallenges(scoreResult) {
+    if (!this.state.today.challenges || this.state.today.challenges.length === 0) return { xp: 0, coins: 0, completed: [] };
+
+    const picks = this.state.today.picks;
+    const slatePicks = this.slate?.picks || [];
+    let bonusXp = 0;
+    let bonusCoins = 0;
+    const completed = [];
+
+    for (const challenge of this.state.today.challenges) {
+      if (challenge.completed) continue;
+
+      const def = DAILY_CHALLENGES.find(d => d.id === challenge.id);
+      if (!def) continue;
+
+      let passed = false;
+
+      switch (challenge.id) {
+        case 'sweep':
+          passed = scoreResult.isPerfect === true;
+          break;
+        case 'lock_win':
+          passed = scoreResult.lockResult === 'won';
+          break;
+        case 'no_pass':
+          passed = picks.every(p => p.choice !== 'PASS' && p.status !== PICK_STATUS.PASSED);
+          break;
+        case 'streak_3':
+          passed = this.state.stats.allTime.currentPickStreak >= 3;
+          break;
+        case 'five_correct':
+          passed = scoreResult.correctCount >= 5;
+          break;
+        case 'underdog': {
+          let spreadWins = 0;
+          picks.forEach((p, i) => {
+            if (p.status === PICK_STATUS.WON && slatePicks[i] && slatePicks[i].market === 'spread') {
+              spreadWins++;
+            }
+          });
+          passed = spreadWins >= 3;
+          break;
+        }
+        case 'multi_sport': {
+          const winningSports = new Set();
+          picks.forEach((p, i) => {
+            if (p.status === PICK_STATUS.WON && slatePicks[i]) {
+              winningSports.add(slatePicks[i].sport);
+            }
+          });
+          passed = winningSports.size >= 2;
+          break;
+        }
+      }
+
+      if (passed) {
+        challenge.completed = true;
+        bonusXp += def.xp;
+        bonusCoins += def.coins;
+        completed.push(def);
+        if (!this.state.stats.allTime.challengesCompleted) {
+          this.state.stats.allTime.challengesCompleted = 0;
+        }
+        this.state.stats.allTime.challengesCompleted++;
+      }
+    }
+
+    return { xp: bonusXp, coins: bonusCoins, completed };
   }
 
   showResults(scoreResult, xp, coins, leveledUp) {
@@ -2042,6 +2169,7 @@ class SportsIQ {
 
     this.updateHeader();
     this.renderPickCards();
+    this.renderChallenges();
 
     this.showXPPopup(xp);
     if (coins > 0) {
@@ -2929,11 +3057,48 @@ class SportsIQ {
     this.renderBadges();
     this.renderHistory();
     this.renderEnhancedStats();
+    this.renderProfileChallenges();
 
     document.getElementById('username-input').value = this.state.username;
 
     // Update scoring mode UI
     this.updateScoringModeUI();
+  }
+
+  // ========================================
+  // PROFILE CHALLENGES
+  // ========================================
+
+  renderProfileChallenges() {
+    const listEl = document.getElementById('profile-challenges-list');
+    const todayEl = document.getElementById('profile-challenges-today');
+    const alltimeEl = document.getElementById('challenge-alltime-count');
+
+    const challenges = this.state.today.challenges || [];
+    const completedCount = challenges.filter(c => c.completed).length;
+    const allTimeCount = this.state.stats.allTime.challengesCompleted || 0;
+
+    if (todayEl) todayEl.textContent = `${completedCount}/${challenges.length}`;
+    if (alltimeEl) alltimeEl.textContent = allTimeCount;
+
+    if (listEl) {
+      if (challenges.length === 0) {
+        listEl.innerHTML = '<p class="challenges-empty">No challenges today</p>';
+      } else {
+        listEl.innerHTML = challenges.map(ch => {
+          const def = DAILY_CHALLENGES.find(d => d.id === ch.id);
+          if (!def) return '';
+          const done = ch.completed;
+          return `
+            <div class="profile-challenge-row ${done ? 'completed' : ''}">
+              <span class="profile-challenge-icon">${def.icon}</span>
+              <span class="profile-challenge-name">${def.name}</span>
+              <span class="profile-challenge-status">${done ? '✅' : '⬜'}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
   }
 
   // ========================================
