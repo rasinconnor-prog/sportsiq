@@ -12,6 +12,10 @@ class SportsIQ {
     this.h2hMode = false;
     this.player2State = null;
     this.liveScores = {};
+    this.testingModeEnabled = false;
+    this.testingDay = 'today';
+    this.tomorrowSlate = null;
+    this.testingState = this.loadTestingState();
     this.init();
   }
 
@@ -107,7 +111,127 @@ class SportsIQ {
   }
 
   saveState() {
+    if (this.isTestingMode()) {
+      this.saveTestingState();
+      return;
+    }
     localStorage.setItem('sportsiq_state', JSON.stringify(this.state));
+  }
+
+  isTestingMode() {
+    return this.testingModeEnabled;
+  }
+
+  loadTestingState() {
+    const saved = localStorage.getItem('sportsiq_testing_state');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return {};
+      }
+    }
+    return {};
+  }
+
+  saveTestingState() {
+    const key = this.testingDay === 'tomorrow' ? 'tomorrow' : 'today';
+    if (!this.testingState) this.testingState = {};
+    this.testingState[key] = {
+      today: JSON.parse(JSON.stringify(this.state.today)),
+      slate: this.testingDay === 'tomorrow' ? this.tomorrowSlate : this.slate,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem('sportsiq_testing_state', JSON.stringify(this.testingState));
+  }
+
+  restoreTestingState(day) {
+    if (this.testingState && this.testingState[day]) {
+      const saved = this.testingState[day];
+      this.state.today = JSON.parse(JSON.stringify(saved.today));
+    }
+  }
+
+  toggleTestingMode() {
+    this.testingModeEnabled = !this.testingModeEnabled;
+    const indicator = document.getElementById('testing-mode-indicator');
+    const tabBar = document.getElementById('testing-day-tabs');
+
+    if (this.testingModeEnabled) {
+      this.productionState = JSON.parse(JSON.stringify(this.state));
+      this.productionSlate = this.slate;
+      indicator?.classList.remove('hidden');
+      tabBar?.classList.remove('hidden');
+      this.testingDay = 'today';
+      this.updateTestingDayTabs();
+      this.showToast('Testing Mode ON – stats will not be saved');
+    } else {
+      this.state = this.productionState || this.loadState();
+      this.slate = this.productionSlate || this.slate;
+      this.productionState = null;
+      this.productionSlate = null;
+      indicator?.classList.add('hidden');
+      tabBar?.classList.add('hidden');
+      this.showToast('Testing Mode OFF – back to live');
+    }
+    this.initPicksForSlate();
+    this.render();
+  }
+
+  async switchTestingDay(day) {
+    if (!this.testingModeEnabled) return;
+    if (day === this.testingDay) return;
+
+    this.saveTestingState();
+
+    this.testingDay = day;
+    this.updateTestingDayTabs();
+
+    if (day === 'tomorrow') {
+      this.showLoading(true);
+      try {
+        if (!this.tomorrowSlate) {
+          const tomorrowStr = getTomorrowString();
+          this.tomorrowSlate = await generateSlateForDate(tomorrowStr);
+        }
+        this.slate = this.tomorrowSlate;
+      } catch (err) {
+        console.error('Failed to load tomorrow slate:', err);
+        this.showToast('Could not load tomorrow\'s games');
+        this.testingDay = 'today';
+        this.updateTestingDayTabs();
+        this.showLoading(false);
+        return;
+      }
+      this.showLoading(false);
+    } else {
+      this.slate = this.productionSlate || this.slate;
+    }
+
+    if (this.testingState && this.testingState[day]) {
+      this.restoreTestingState(day);
+    } else {
+      this.state.today = {
+        date: day === 'tomorrow' ? getTomorrowString() : getTodayString(),
+        picks: [],
+        lockOfDayIndex: null,
+        submitted: false,
+        submittedAt: null,
+        graded: false,
+        gradedAt: null,
+        score: null
+      };
+    }
+
+    this.initPicksForSlate();
+    this.render();
+  }
+
+  updateTestingDayTabs() {
+    const todayTab = document.getElementById('testing-tab-today');
+    const tomorrowTab = document.getElementById('testing-tab-tomorrow');
+    if (todayTab) todayTab.classList.toggle('active', this.testingDay === 'today');
+    if (tomorrowTab) tomorrowTab.classList.toggle('active', this.testingDay === 'tomorrow');
   }
 
   resetState() {
@@ -536,6 +660,18 @@ class SportsIQ {
 
     document.getElementById('testing-toggle')?.addEventListener('click', () => {
       document.getElementById('testing-panel')?.classList.add('hidden');
+    });
+
+    document.getElementById('testing-mode-toggle-btn')?.addEventListener('click', () => {
+      this.toggleTestingMode();
+    });
+
+    document.getElementById('testing-tab-today')?.addEventListener('click', () => {
+      this.switchTestingDay('today');
+    });
+
+    document.getElementById('testing-tab-tomorrow')?.addEventListener('click', () => {
+      this.switchTestingDay('tomorrow');
     });
 
     document.getElementById('show-debug-btn')?.addEventListener('click', () => {
@@ -1658,6 +1794,8 @@ class SportsIQ {
   }
 
   recordPickResult(idx, won, slatePick) {
+    if (this.isTestingMode()) return;
+
     const sport = slatePick.sport;
     if (!this.state.stats.allTime.bySport[sport]) {
       this.state.stats.allTime.bySport[sport] = { total: 0, correct: 0 };
@@ -1696,6 +1834,15 @@ class SportsIQ {
   }
 
   finalizeCard() {
+    if (this.isTestingMode()) {
+      this.showToast('Card finalized (testing – no stats saved)');
+      this.state.today.graded = true;
+      this.state.today.gradedAt = new Date().toISOString();
+      this.saveTestingState();
+      this.render();
+      return;
+    }
+
     // Prepare picks for the scoring engine
     const picksForScoring = this.state.today.picks.map((pick, idx) => ({
       choice: pick.choice,
@@ -3106,6 +3253,7 @@ class SportsIQ {
   // ========================================
 
   awardBadge(badgeId) {
+    if (this.isTestingMode()) return;
     if (this.state.badges.includes(badgeId)) return;
 
     const badge = BADGES[badgeId];

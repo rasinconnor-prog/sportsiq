@@ -155,6 +155,18 @@
 
     <!-- PLAY VIEW -->
     <main class="view active" id="play-view">
+      <!-- Testing Mode Indicator -->
+      <div class="testing-mode-indicator hidden" id="testing-mode-indicator">
+        <span class="testing-indicator-icon">🧪</span>
+        <span class="testing-indicator-text">Testing Mode – Stats Not Saved</span>
+      </div>
+
+      <!-- Testing Day Tabs -->
+      <div class="testing-day-tabs hidden" id="testing-day-tabs">
+        <button class="testing-day-tab active" id="testing-tab-today">Today</button>
+        <button class="testing-day-tab" id="testing-tab-tomorrow">Tomorrow</button>
+      </div>
+
       <!-- Submission Status Banner -->
       <div class="submission-status-banner" id="submission-status-banner">
         <div class="status-banner-content" id="status-banner-content">
@@ -208,6 +220,9 @@
           <button class="testing-toggle" id="testing-toggle">Hide</button>
         </div>
         <div class="testing-actions">
+          <button class="testing-btn highlight" id="testing-mode-toggle-btn">
+            <span>🔬</span> Toggle Testing Mode
+          </button>
           <button class="testing-btn primary" id="simulate-eod-btn">
             <span>🏁</span> Simulate End of Day
           </button>

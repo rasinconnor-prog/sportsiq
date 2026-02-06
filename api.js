@@ -138,14 +138,15 @@ const CacheManager = {
 // ESPN API (FREE - Primary Data Source)
 // ========================================
 
-async function fetchESPNScoreboard(sport) {
+async function fetchESPNScoreboard(sport, dateStr = null) {
   const config = SPORT_API_MAP[sport];
   if (!config) {
     console.error(`Unknown sport: ${sport}`);
     return [];
   }
 
-  const cacheKey = `espn_${sport}_scoreboard`;
+  const dateSuffix = dateStr ? `_${dateStr}` : '';
+  const cacheKey = `espn_${sport}_scoreboard${dateSuffix}`;
 
   // Check cache first
   const cached = CacheManager.get(cacheKey);
@@ -154,7 +155,10 @@ async function fetchESPNScoreboard(sport) {
   }
 
   try {
-    const url = `${API_CONFIG.ESPN_BASE}/${config.espn}/scoreboard`;
+    let url = `${API_CONFIG.ESPN_BASE}/${config.espn}/scoreboard`;
+    if (dateStr) {
+      url += `?dates=${formatDateForESPN(dateStr)}`;
+    }
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -353,19 +357,19 @@ function parseOddsAPIResponse(data, sport) {
 // ========================================
 
 async function fetchTodaysGames(sports = ['NBA', 'NFL', 'NHL', 'MLB']) {
+  return fetchGamesForDate(sports);
+}
+
+async function fetchGamesForDate(sports = ['NBA', 'NFL', 'NHL', 'MLB'], dateStr = null) {
   const allGames = [];
 
   for (const sport of sports) {
     try {
-      // Always fetch from ESPN (free, unlimited)
-      const espnGames = await fetchESPNScoreboard(sport);
+      const espnGames = await fetchESPNScoreboard(sport, dateStr);
 
-      // Try to enrich with TheOddsAPI lines
-      const oddsData = await fetchOddsAPI(sport);
+      const oddsData = dateStr ? [] : await fetchOddsAPI(sport);
 
-      // Merge ESPN games with odds data
       espnGames.forEach(game => {
-        // Try to match with odds data
         const matchingOdds = oddsData.find(o =>
           matchTeamNames(o.homeTeam, game.homeTeam) ||
           matchTeamNames(o.awayTeam, game.awayTeam)
@@ -473,6 +477,51 @@ async function generateDailySlate() {
   // Cache the slate
   CacheManager.set(cacheKey, slate, API_CONFIG.CACHE_DURATION);
 
+  return slate;
+}
+
+async function generateSlateForDate(dateStr) {
+  const cacheKey = `slate_${dateStr}`;
+
+  const cached = CacheManager.get(cacheKey);
+  if (cached && cached.picks?.length > 0) {
+    return cached;
+  }
+
+  console.log(`Generating slate for ${dateStr}...`);
+
+  const games = await fetchGamesForDate(['NBA', 'NFL', 'NHL', 'MLB'], dateStr);
+  const picks = [];
+
+  const availableGames = [...games];
+  availableGames.sort((a, b) => new Date(a.gameTime) - new Date(b.gameTime));
+
+  for (const game of availableGames) {
+    if (picks.length >= 7) break;
+    if (game.spread !== null && picks.length < 7) {
+      picks.push(createRealPick(game, 'spread', picks.length + 1));
+    }
+    if (game.overUnder !== null && picks.length < 7) {
+      picks.push(createRealPick(game, 'total', picks.length + 1));
+    }
+  }
+
+  for (const game of availableGames) {
+    if (picks.length >= 7) break;
+    if (game.moneyline && !picks.find(p => p.gameId === game.id)) {
+      picks.push(createRealPick(game, 'moneyline', picks.length + 1));
+    }
+  }
+
+  const slate = {
+    id: `slate_${dateStr.replace(/-/g, '')}`,
+    date: dateStr,
+    picks: picks.slice(0, 7),
+    generatedAt: new Date().toISOString(),
+    source: 'ESPN'
+  };
+
+  CacheManager.set(cacheKey, slate, API_CONFIG.CACHE_DURATION);
   return slate;
 }
 
