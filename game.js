@@ -535,6 +535,9 @@ class SportsIQ {
       });
     });
 
+    // Scroll-to-submit FAB
+    this.initScrollSubmitFab();
+
     // Submit button (shows confirmation modal)
     document.getElementById('submit-picks-btn')?.addEventListener('click', () => {
       this.showSubmitConfirmation();
@@ -784,6 +787,9 @@ class SportsIQ {
 
     this.currentView = viewName;
 
+    const fab = document.getElementById('scroll-submit-fab');
+    if (fab && viewName !== 'play') fab.classList.add('hidden');
+
     if (viewName === 'profile') this.renderProfile();
     if (viewName === 'compete') this.renderCompete();
     if (viewName === 'games') this.renderTodaysGames();
@@ -866,6 +872,29 @@ class SportsIQ {
       submitSection.classList.remove('ready');
       helperText.textContent = `${remaining} pick${remaining !== 1 ? 's' : ''} remaining`;
     }
+  }
+
+  initScrollSubmitFab() {
+    const fab = document.getElementById('scroll-submit-fab');
+    const submitSection = document.getElementById('submit-section');
+    if (!fab || !submitSection) return;
+
+    fab.addEventListener('click', () => {
+      submitSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    this._submitObserver = new IntersectionObserver((entries) => {
+      const isVisible = entries[0].isIntersecting;
+      const isPlayView = document.getElementById('play-view')?.classList.contains('hidden') === false;
+      const isSubmitted = this.state?.today?.submitted;
+      if (isVisible || !isPlayView || isSubmitted) {
+        fab.classList.add('hidden');
+      } else {
+        fab.classList.remove('hidden');
+      }
+    }, { threshold: 0.1 });
+
+    this._submitObserver.observe(submitSection);
   }
 
   renderSubmittedPicksSummary() {
