@@ -31,6 +31,18 @@ SportsIQ is a free daily sports prediction game built as a static frontend appli
 - Profile view: "Challenges" section between Performance and Badges shows today's status + all-time count
 - Testing mode guard in `finalizeCard()` returns early, so challenges never complete in testing
 
+### Profile Personalization (Feb 2026)
+- 5 preset avatars defined in `PRESET_AVATARS` array in `data.js`: neon-wolf, crosshair, brain-spark, flame-trophy, shadow-striker
+- 4 color themes defined in `COLOR_THEMES` array in `data.js`: purple (default), cyan, magenta, emerald
+- Themes set CSS variables `--theme-accent`, `--theme-accent-bright`, `--theme-accent-glow` on `:root`
+- Theme affects: nav active indicator, level progress bar, avatar ring, customize button/modal
+- User state fields: `avatarId` (default: 'neon-wolf'), `themeId` (default: 'purple')
+- `migrateState()` backfills both fields for existing users
+- Profile header shows SVG avatar + "Customize" button
+- Bottom sheet modal with avatar grid (5 circular options) + theme picker (4 swatches)
+- Live theme preview in modal; reverts on cancel, persists on save
+- `stopPropagation` on customize button prevents level sheet from opening
+
 ### Testing Mode (Feb 2026)
 - Toggle via Debug Panel > "Toggle Testing Mode" button
 - Isolates all picks/stats to separate localStorage key (`sportsiq_testing_state`)

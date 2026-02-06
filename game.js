@@ -110,6 +110,10 @@ class SportsIQ {
     }
     if (!state.stats.allTime.bestDailyScore) state.stats.allTime.bestDailyScore = 0;
 
+    // Avatar & theme personalization
+    if (!state.avatarId) state.avatarId = 'neon-wolf';
+    if (!state.themeId) state.themeId = 'purple';
+
     // Scoring mode preference (default to classic)
     if (!state.scoringMode) state.scoringMode = SCORING_MODE.CLASSIC;
 
@@ -269,6 +273,7 @@ class SportsIQ {
     this.initPicksForSlate();
     this.initPlayer2();
     this.bindEvents();
+    this.applyTheme(this.state.themeId);
     this.render();
     this.startAutoRefresh();
     this.showLoading(false);
@@ -728,6 +733,9 @@ class SportsIQ {
 
     // Level Progress Sheet
     this.bindLevelSheetEvents();
+
+    // Customize Profile Sheet
+    this.bindCustomizeSheetEvents();
   }
 
   bindLevelSheetEvents() {
@@ -3040,6 +3048,8 @@ class SportsIQ {
     document.getElementById('avatar-level').textContent = this.state.level;
     document.getElementById('profile-level').textContent = this.state.level;
 
+    this.renderProfileAvatar();
+
     const currentLevelXp = getXpForLevel(this.state.level - 1);
     const nextLevelXp = getXpForLevel(this.state.level);
     const progress = ((this.state.xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
@@ -3099,6 +3109,121 @@ class SportsIQ {
         }).join('');
       }
     }
+  }
+
+  // ========================================
+  // PROFILE CUSTOMIZATION
+  // ========================================
+
+  renderProfileAvatar() {
+    const container = document.getElementById('avatar-svg-container');
+    if (!container) return;
+    const avatar = PRESET_AVATARS.find(a => a.id === this.state.avatarId) || PRESET_AVATARS[0];
+    container.innerHTML = avatar.svg;
+  }
+
+  applyTheme(themeId) {
+    const theme = COLOR_THEMES.find(t => t.id === themeId) || COLOR_THEMES[0];
+    const root = document.documentElement;
+    root.style.setProperty('--theme-accent', theme.hex);
+    root.style.setProperty('--theme-accent-bright', theme.bright);
+    root.style.setProperty('--theme-accent-glow', theme.glow);
+  }
+
+  bindCustomizeSheetEvents() {
+    document.getElementById('customize-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openCustomizeSheet();
+    });
+
+    document.querySelector('.customize-sheet-backdrop')?.addEventListener('click', () => {
+      this.closeCustomizeSheet();
+    });
+
+    document.getElementById('customize-sheet-close')?.addEventListener('click', () => {
+      this.closeCustomizeSheet();
+    });
+
+    document.getElementById('customize-save-btn')?.addEventListener('click', () => {
+      this.saveCustomization();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('customize-sheet')?.classList.contains('hidden')) {
+        this.closeCustomizeSheet();
+      }
+    });
+  }
+
+  openCustomizeSheet() {
+    this._pendingAvatarId = this.state.avatarId;
+    this._pendingThemeId = this.state.themeId;
+    this.renderAvatarGrid();
+    this.renderThemePicker();
+    const sheet = document.getElementById('customize-sheet');
+    if (sheet) sheet.classList.remove('hidden');
+  }
+
+  closeCustomizeSheet() {
+    const sheet = document.getElementById('customize-sheet');
+    if (sheet) sheet.classList.add('hidden');
+    this.applyTheme(this.state.themeId);
+  }
+
+  renderAvatarGrid() {
+    const grid = document.getElementById('avatar-grid');
+    if (!grid) return;
+
+    grid.innerHTML = PRESET_AVATARS.map(avatar => {
+      const selected = avatar.id === this._pendingAvatarId ? 'selected' : '';
+      return `
+        <div class="avatar-option-wrapper">
+          <div class="avatar-option ${selected}" data-avatar-id="${avatar.id}">
+            ${avatar.svg}
+          </div>
+          <div class="avatar-option-name">${avatar.name}</div>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.avatar-option').forEach(el => {
+      el.addEventListener('click', () => {
+        this._pendingAvatarId = el.dataset.avatarId;
+        this.renderAvatarGrid();
+      });
+    });
+  }
+
+  renderThemePicker() {
+    const picker = document.getElementById('theme-picker');
+    if (!picker) return;
+
+    picker.innerHTML = COLOR_THEMES.map(theme => {
+      const selected = theme.id === this._pendingThemeId ? 'selected' : '';
+      return `
+        <div class="theme-swatch ${selected}" data-theme-id="${theme.id}" style="--swatch-color: ${theme.hex}">
+          <div class="theme-swatch-circle" style="background: ${theme.hex}"></div>
+          <span class="theme-swatch-name">${theme.name}</span>
+        </div>
+      `;
+    }).join('');
+
+    picker.querySelectorAll('.theme-swatch').forEach(el => {
+      el.addEventListener('click', () => {
+        this._pendingThemeId = el.dataset.themeId;
+        this.applyTheme(this._pendingThemeId);
+        this.renderThemePicker();
+      });
+    });
+  }
+
+  saveCustomization() {
+    this.state.avatarId = this._pendingAvatarId;
+    this.state.themeId = this._pendingThemeId;
+    this.applyTheme(this.state.themeId);
+    this.renderProfileAvatar();
+    this.saveState();
+    this.closeCustomizeSheet();
   }
 
   // ========================================

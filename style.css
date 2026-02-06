@@ -3735,11 +3735,11 @@ body {
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    var(--primary) 0%,
-    var(--accent-blue) 25%,
-    var(--accent-green) 50%,
-    var(--primary) 75%,
-    var(--primary) 100%
+    var(--theme-accent, var(--primary)) 0%,
+    var(--theme-accent-bright, var(--accent-blue)) 25%,
+    var(--theme-accent, var(--primary)) 50%,
+    var(--theme-accent-bright, var(--accent-blue)) 75%,
+    var(--theme-accent, var(--primary)) 100%
   );
   animation: avatarRingRotate 4s linear infinite;
   opacity: 0.8;
@@ -3895,12 +3895,12 @@ body {
 
 .level-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary) 0%, var(--accent-blue) 50%, var(--accent-green) 100%);
+  background: linear-gradient(90deg, var(--theme-accent, var(--primary)) 0%, var(--theme-accent-bright, var(--accent-blue)) 100%);
   border-radius: 8px;
   transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow:
-    0 0 20px var(--primary-glow),
-    0 0 40px rgba(0, 212, 255, 0.3);
+    0 0 20px var(--theme-accent-glow, var(--primary-glow)),
+    0 0 40px var(--theme-accent-glow, rgba(0, 212, 255, 0.3));
   position: relative;
   transform-origin: left;
 }
@@ -4991,7 +4991,7 @@ body {
 }
 
 .nav-item.active {
-  color: var(--primary-bright);
+  color: var(--theme-accent-bright, var(--primary-bright));
 }
 
 .nav-item.active::after {
@@ -5002,14 +5002,14 @@ body {
   transform: translateX(-50%);
   width: 24px;
   height: 3px;
-  background: var(--gradient-purple);
+  background: linear-gradient(135deg, var(--theme-accent, #c084fc) 0%, var(--theme-accent-bright, #8b5cf6) 100%);
   border-radius: 2px;
-  box-shadow: 0 0 10px var(--primary-glow);
+  box-shadow: 0 0 10px var(--theme-accent-glow, var(--primary-glow));
 }
 
 .nav-item.active .nav-icon {
   transform: scale(1.1);
-  filter: drop-shadow(0 0 8px var(--primary-glow));
+  filter: drop-shadow(0 0 8px var(--theme-accent-glow, var(--primary-glow)));
 }
 
 .nav-icon {
@@ -7735,6 +7735,343 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: var(--accent-blue);
+}
+
+/* ========================================
+   THEME CSS VARIABLES (overrides --primary)
+   ======================================== */
+:root {
+  --theme-accent: #8b5cf6;
+  --theme-accent-bright: #a78bfa;
+  --theme-accent-glow: rgba(139, 92, 246, 0.4);
+}
+
+/* ========================================
+   CUSTOMIZE BUTTON (Profile Header)
+   ======================================== */
+.customize-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  color: var(--theme-accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.customize-btn:hover,
+.customize-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 12px var(--theme-accent-glow);
+}
+
+/* ========================================
+   AVATAR SVG IN PROFILE HEADER
+   ======================================== */
+.avatar-svg-container {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-svg-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ========================================
+   CUSTOMIZE PROFILE BOTTOM SHEET
+   ======================================== */
+.customize-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.customize-sheet:not(.hidden) {
+  pointer-events: auto;
+}
+
+.customize-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 15, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.customize-sheet:not(.hidden) .customize-sheet-backdrop {
+  opacity: 1;
+}
+
+.customize-sheet-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 80vh;
+  background: linear-gradient(165deg, rgba(20, 18, 35, 0.98) 0%, rgba(12, 10, 25, 0.99) 100%);
+  border-top: 1px solid var(--theme-accent-glow);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 20px 30px;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow:
+    0 -10px 60px rgba(0, 0, 0, 0.6),
+    0 0 80px var(--theme-accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.customize-sheet:not(.hidden) .customize-sheet-content {
+  transform: translateY(0);
+}
+
+.customize-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.customize-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.customize-sheet-header h2 {
+  font-family: 'Orbitron', var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-white);
+}
+
+.customize-sheet-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-gray);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.customize-sheet-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-white);
+}
+
+/* Customize Sections */
+.customize-section {
+  margin-bottom: 24px;
+}
+
+.customize-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+/* ========================================
+   AVATAR GRID
+   ======================================== */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  justify-items: center;
+}
+
+.avatar-option-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.avatar-option {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(28, 28, 55, 0.95) 0%, rgba(15, 15, 32, 0.98) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 14px;
+  position: relative;
+}
+
+.avatar-option svg {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-option:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--theme-accent-glow);
+}
+
+.avatar-option.selected {
+  border-color: var(--theme-accent);
+  box-shadow: 0 0 20px var(--theme-accent-glow), 0 0 40px var(--theme-accent-glow);
+}
+
+.avatar-option.selected::after {
+  content: '✓';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  background: var(--theme-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  font-weight: 700;
+}
+
+.avatar-option-name {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ========================================
+   THEME PICKER
+   ======================================== */
+.theme-picker {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-swatch-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.theme-swatch:hover .theme-swatch-circle {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.theme-swatch.selected .theme-swatch-circle {
+  border-color: white;
+  box-shadow: 0 0 20px var(--swatch-color);
+}
+
+.theme-swatch.selected .theme-swatch-circle::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.theme-swatch-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.theme-swatch.selected .theme-swatch-name {
+  color: var(--text-primary);
+}
+
+/* ========================================
+   SAVE BUTTON
+   ======================================== */
+.customize-save-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, var(--theme-accent) 0%, var(--theme-accent-bright) 100%);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-family: 'Orbitron', var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px var(--theme-accent-glow);
+}
+
+.customize-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 30px var(--theme-accent-glow);
+}
+
+.customize-save-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   RESPONSIVE - AVATAR GRID
+   ======================================== */
+@media (max-width: 400px) {
+  .avatar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .avatar-option {
+    width: 70px;
+    height: 70px;
+    padding: 12px;
+  }
 }
 
 .hidden { display: none !important; }

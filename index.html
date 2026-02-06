@@ -481,11 +481,13 @@
       <!-- Profile Header -->
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar">
+          <div class="avatar-svg-container" id="avatar-svg-container"></div>
           <span class="avatar-level">Lv.<span id="avatar-level">1</span></span>
         </div>
         <div class="profile-info">
           <h1 class="profile-name" id="profile-name">Player</h1>
           <p class="profile-joined">Joined <span id="joined-date">Feb 2026</span></p>
+          <button class="customize-btn" id="customize-btn">✨ Customize</button>
         </div>
       </div>
 
@@ -891,6 +893,30 @@
         <h2>Level Up!</h2>
         <p class="levelup-level">Level <span id="new-level">2</span></p>
         <button class="modal-btn" onclick="closeModal('levelup-modal')">Awesome!</button>
+      </div>
+    </div>
+
+    <!-- Customize Profile Bottom Sheet -->
+    <div class="customize-sheet hidden" id="customize-sheet">
+      <div class="customize-sheet-backdrop"></div>
+      <div class="customize-sheet-content">
+        <div class="customize-sheet-handle"></div>
+        <div class="customize-sheet-header">
+          <h2>Customize Profile</h2>
+          <button class="customize-sheet-close" id="customize-sheet-close">&times;</button>
+        </div>
+
+        <div class="customize-section">
+          <h3 class="customize-section-title">Choose Avatar</h3>
+          <div class="avatar-grid" id="avatar-grid"></div>
+        </div>
+
+        <div class="customize-section">
+          <h3 class="customize-section-title">Color Theme</h3>
+          <div class="theme-picker" id="theme-picker"></div>
+        </div>
+
+        <button class="customize-save-btn" id="customize-save-btn">Save Changes</button>
       </div>
     </div>
 

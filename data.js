@@ -4,6 +4,84 @@
 // ========================================
 
 // ========================================
+// PRESET AVATARS
+// ========================================
+const PRESET_AVATARS = [
+  {
+    id: 'neon-wolf',
+    name: 'Neon Wolf',
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="wolf-g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:var(--theme-accent,#A855F7)"/><stop offset="100%" style="stop-color:var(--theme-accent-bright,#C084FC)"/></linearGradient></defs>
+      <path d="M50 15 L30 35 L25 20 L35 45 L20 55 L35 60 L40 85 L50 75 L60 85 L65 60 L80 55 L65 45 L75 20 L70 35 Z" fill="none" stroke="url(#wolf-g)" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="40" cy="48" r="3" fill="var(--theme-accent,#A855F7)"/>
+      <circle cx="60" cy="48" r="3" fill="var(--theme-accent,#A855F7)"/>
+      <path d="M44 58 Q50 63 56 58" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5"/>
+    </svg>`
+  },
+  {
+    id: 'crosshair',
+    name: 'Crosshair',
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="30" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <circle cx="50" cy="50" r="18" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="50" cy="50" r="4" fill="var(--theme-accent,#A855F7)"/>
+      <line x1="50" y1="12" x2="50" y2="35" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <line x1="50" y1="65" x2="50" y2="88" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <line x1="12" y1="50" x2="35" y2="50" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <line x1="65" y1="50" x2="88" y2="50" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+    </svg>`
+  },
+  {
+    id: 'brain-spark',
+    name: 'Brain Spark',
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 80 C50 80 30 70 25 55 C20 40 30 25 42 25 C45 20 55 20 58 25 C70 25 80 40 75 55 C70 70 50 80 50 80Z" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <path d="M40 45 Q50 55 60 45" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5" opacity="0.6"/>
+      <path d="M35 55 Q50 65 65 55" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5" opacity="0.6"/>
+      <path d="M50 25 L47 12 L53 18 L50 5" stroke="var(--theme-accent-bright,#C084FC)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="50" cy="5" r="2" fill="var(--theme-accent-bright,#C084FC)"/>
+    </svg>`
+  },
+  {
+    id: 'flame-trophy',
+    name: 'Flaming Trophy',
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M35 40 L35 65 L45 70 L45 78 L55 78 L55 70 L65 65 L65 40 Z" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M35 45 Q20 45 22 55 Q25 65 35 60" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5"/>
+      <path d="M65 45 Q80 45 78 55 Q75 65 65 60" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5"/>
+      <rect x="40" y="78" width="20" height="5" rx="2" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="1.5"/>
+      <path d="M50 38 Q45 28 50 20 Q52 28 55 25 Q53 32 58 30 Q54 36 50 38Z" fill="var(--theme-accent-bright,#C084FC)" opacity="0.8"/>
+      <path d="M46 40 Q44 34 47 30" stroke="var(--theme-accent-bright,#C084FC)" stroke-width="1" fill="none" opacity="0.5"/>
+    </svg>`
+  },
+  {
+    id: 'shadow-striker',
+    name: 'Shadow Striker',
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="25" r="8" fill="none" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <path d="M50 33 L50 58" stroke="var(--theme-accent,#A855F7)" stroke-width="2.5"/>
+      <path d="M50 42 L32 55" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <path d="M50 42 L68 38" stroke="var(--theme-accent,#A855F7)" stroke-width="2"/>
+      <path d="M50 58 L35 82" stroke="var(--theme-accent,#A855F7)" stroke-width="2.5"/>
+      <path d="M50 58 L65 78" stroke="var(--theme-accent,#A855F7)" stroke-width="2.5"/>
+      <line x1="62" y1="35" x2="78" y2="30" stroke="var(--theme-accent-bright,#C084FC)" stroke-width="1.5" opacity="0.5"/>
+      <line x1="72" y1="28" x2="82" y2="25" stroke="var(--theme-accent-bright,#C084FC)" stroke-width="1" opacity="0.3"/>
+      <line x1="68" y1="38" x2="75" y2="42" stroke="var(--theme-accent-bright,#C084FC)" stroke-width="1" opacity="0.3"/>
+    </svg>`
+  }
+];
+
+// ========================================
+// COLOR THEMES
+// ========================================
+const COLOR_THEMES = [
+  { id: 'purple', name: 'Core Purple', hex: '#A855F7', bright: '#C084FC', glow: 'rgba(168, 85, 247, 0.4)' },
+  { id: 'cyan', name: 'Neon Cyan', hex: '#06B6D4', bright: '#22D3EE', glow: 'rgba(6, 182, 212, 0.4)' },
+  { id: 'magenta', name: 'Magenta Fire', hex: '#EC4899', bright: '#F472B6', glow: 'rgba(236, 72, 153, 0.4)' },
+  { id: 'emerald', name: 'Emerald Edge', hex: '#10B981', bright: '#34D399', glow: 'rgba(16, 185, 129, 0.4)' }
+];
+
+// ========================================
 // GAME RESULTS STORAGE
 // Stores resolved game outcomes separately from picks
 // ========================================
@@ -502,6 +580,8 @@ function getDefaultUserState() {
     userId: 'user_' + Math.random().toString(36).substr(2, 9),
     username: 'Player',
     joinDate: new Date().toISOString(),
+    avatarId: 'neon-wolf',
+    themeId: 'purple',
 
     // Progression
     level: 1,
