@@ -20,6 +20,23 @@ SportsIQ is a free daily sports prediction game built as a static frontend appli
 - `server.js` - Static file server for Replit
 
 ## Features
+
+### Multi-Sport Pool Selection (Feb 2026)
+- `MAX_PICKS = 7` constant defined in `game.js` controls required pick count
+- `generateDailySlate()` in `api.js` returns ALL available picks from NBA, NFL, NHL, MLB (15-20+ picks)
+- Users browse the full pool and select exactly 7 A/B picks to submit
+- Sport filter tabs (All/NBA/NFL/NHL/MLB) above picks container filter visible cards
+- `sportFilter` property on SportsIQ class tracks active filter
+- `getSelectedPickCount()` helper counts only A/B choices (not PASS/unselected)
+- `updateFilterCounts()` hides pills for sports with no games
+- Pick indices preserved through filtering to maintain correct state mapping
+- Deselection enabled: clicking same option again clears the selection
+- PASS option retained but doesn't count toward 7-pick limit
+- `submitCard()` marks A/B picks as PENDING, everything else as PASSED
+- Only active (A/B) picks are scored, shown in pending list, and counted in results
+- Sport filter bar hidden after card submission
+- Scroll-to-submit FAB button appears when submit button scrolls out of view
+
 ### Daily Challenges (Feb 2026)
 - 7 challenge types defined in `DAILY_CHALLENGES` array in `data.js`: sweep, lock_win, no_pass, streak_3, five_correct, underdog, multi_sport
 - `getDailyChallenges(dateStr)` deterministically selects 3 challenges per day using date as seed

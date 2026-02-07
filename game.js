@@ -3,6 +3,8 @@
 // Real-Time Odds, Live Scores, H2H Mode
 // ========================================
 
+const MAX_PICKS = 7;
+
 class SportsIQ {
   constructor() {
     this.state = this.loadState();
@@ -16,6 +18,7 @@ class SportsIQ {
     this.testingDay = 'today';
     this.tomorrowSlate = null;
     this.testingState = this.loadTestingState();
+    this.sportFilter = 'ALL';
     this.init();
   }
 
@@ -535,6 +538,16 @@ class SportsIQ {
       });
     });
 
+    // Sport filter pills
+    document.querySelectorAll('.sport-filter-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        this.sportFilter = e.currentTarget.dataset.sport;
+        document.querySelectorAll('.sport-filter-pill').forEach(p => p.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        this.renderPickCards();
+      });
+    });
+
     // Scroll-to-submit FAB
     this.initScrollSubmitFab();
 
@@ -807,6 +820,11 @@ class SportsIQ {
     this.updateProgress();
     this.updateSubmitButton();
     this.updateCardState();
+
+    const filterBar = document.getElementById('sport-filter-bar');
+    if (filterBar) {
+      filterBar.classList.toggle('hidden', !!this.state.today.submitted);
+    }
     this.renderPendingPicks();
     this.renderChallenges();
     this.renderH2HScoreboard();
@@ -852,14 +870,13 @@ class SportsIQ {
     submitSection.classList.remove('hidden');
     submittedSection.classList.add('hidden');
 
-    // Check if all picks are made
     const currentPicks = this.h2hMode && this.h2hCurrentPlayer === 2
       ? this.player2State?.picks || []
       : this.state.today.picks;
 
-    const allPicked = currentPicks.every(p => p.choice !== null);
-    const picksMade = currentPicks.filter(p => p.choice !== null).length;
-    const remaining = 7 - picksMade;
+    const picksMade = currentPicks.filter(p => p.choice === 'A' || p.choice === 'B').length;
+    const allPicked = picksMade >= MAX_PICKS;
+    const remaining = MAX_PICKS - picksMade;
 
     if (allPicked) {
       submitBtn.disabled = false;
@@ -872,6 +889,30 @@ class SportsIQ {
       submitSection.classList.remove('ready');
       helperText.textContent = `${remaining} pick${remaining !== 1 ? 's' : ''} remaining`;
     }
+  }
+
+  getSelectedPickCount() {
+    const currentPicks = this.h2hMode && this.h2hCurrentPlayer === 2
+      ? this.player2State?.picks || []
+      : this.state.today.picks;
+    return currentPicks.filter(p => p.choice === 'A' || p.choice === 'B').length;
+  }
+
+  updateFilterCounts() {
+    if (!this.slate?.picks) return;
+    const sportCounts = {};
+    this.slate.picks.forEach(p => {
+      sportCounts[p.sport] = (sportCounts[p.sport] || 0) + 1;
+    });
+    document.querySelectorAll('.sport-filter-pill').forEach(pill => {
+      const sport = pill.dataset.sport;
+      const count = sport === 'ALL' ? this.slate.picks.length : (sportCounts[sport] || 0);
+      if (count === 0 && sport !== 'ALL') {
+        pill.style.display = 'none';
+      } else {
+        pill.style.display = '';
+      }
+    });
   }
 
   initScrollSubmitFab() {
@@ -902,11 +943,11 @@ class SportsIQ {
     if (!container) return;
 
     container.innerHTML = this.state.today.picks.map((pick, idx) => {
+      if (pick.choice !== 'A' && pick.choice !== 'B') return '';
       const slatePick = this.slate.picks[idx];
-      const choice = pick.choice === 'PASS' ? 'PASS' : (pick.choice === 'A' ? slatePick.optionA.short : slatePick.optionB.short);
+      const choice = pick.choice === 'A' ? slatePick.optionA.short : slatePick.optionB.short;
       const isLock = this.state.today.lockOfDayIndex === idx;
-      const isPass = pick.choice === 'PASS';
-      return `<span class="pick-chip ${isLock ? 'lock' : ''} ${isPass ? 'pass' : ''}">${isLock ? '🔒 ' : ''}${choice}</span>`;
+      return `<span class="pick-chip ${isLock ? 'lock' : ''}">${isLock ? '🔒 ' : ''}${choice}</span>`;
     }).join('');
   }
 
@@ -915,8 +956,10 @@ class SportsIQ {
       ? this.player2State?.picks || []
       : this.state.today.picks;
 
-    if (!currentPicks.every(p => p.choice !== null)) {
-      this.showToast('Complete all picks first!');
+    const selectedCount = currentPicks.filter(p => p.choice === 'A' || p.choice === 'B').length;
+    if (selectedCount < MAX_PICKS) {
+      const remaining = MAX_PICKS - selectedCount;
+      this.showToast(`Select ${remaining} more pick${remaining !== 1 ? 's' : ''}!`);
       return;
     }
 
@@ -1014,10 +1057,15 @@ class SportsIQ {
       ? this.player2State?.picks || []
       : this.state.today.picks;
 
-    container.innerHTML = this.slate.picks.map((pick, idx) => {
+    this.updateFilterCounts();
+
+    const filteredPicks = this.slate.picks.map((pick, idx) => ({ pick, idx }))
+      .filter(({ pick }) => this.sportFilter === 'ALL' || pick.sport === this.sportFilter);
+
+    container.innerHTML = filteredPicks.map(({ pick, idx }) => {
       const sport = SPORTS[pick.sport] || { icon: '🎯', name: pick.sport, color: '#6366f1', gradient: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', bgTint: 'rgba(99, 102, 241, 0.1)' };
       const userPick = currentPicks[idx] || { choice: null, status: PICK_STATUS.UNSELECTED, isLockOfDay: false };
-      const isSelected = userPick.choice !== null;
+      const isSelected = userPick.choice !== null && userPick.choice !== 'PASS';
       const isSubmitted = this.h2hMode && this.h2hCurrentPlayer === 2
         ? this.player2State?.submitted
         : this.state.today.submitted;
@@ -1176,8 +1224,8 @@ class SportsIQ {
       ? this.player2State?.picks || []
       : this.state.today.picks;
 
-    const made = currentPicks.filter(p => p.choice !== null).length;
-    const total = 7;
+    const made = currentPicks.filter(p => p.choice === 'A' || p.choice === 'B').length;
+    const total = MAX_PICKS;
     const progressEl = document.getElementById('picks-made');
     const oldValue = parseInt(progressEl.textContent) || 0;
 
@@ -1210,8 +1258,9 @@ class SportsIQ {
 
     if (this.state.today.submitted) {
 
-      const allGraded = this.state.today.picks.every(p =>
-        p.status === PICK_STATUS.WON || p.status === PICK_STATUS.LOST || p.status === PICK_STATUS.PUSH || p.status === PICK_STATUS.PASSED
+      const activePicks = this.state.today.picks.filter(p => p.choice === 'A' || p.choice === 'B');
+      const allGraded = activePicks.every(p =>
+        p.status === PICK_STATUS.WON || p.status === PICK_STATUS.LOST || p.status === PICK_STATUS.PUSH
       );
 
       if (allGraded && this.state.today.graded) {
@@ -1224,14 +1273,15 @@ class SportsIQ {
   }
 
   updatePendingBanner() {
-    const pendingCount = this.state.today.picks.filter(p => p.status === PICK_STATUS.PENDING).length;
-    const gradedCount = this.state.today.picks.filter(p =>
-      p.status === PICK_STATUS.WON || p.status === PICK_STATUS.LOST || p.status === PICK_STATUS.PUSH || p.status === PICK_STATUS.PASSED
+    const activePicks = this.state.today.picks.filter(p => p.choice === 'A' || p.choice === 'B');
+    const pendingCount = activePicks.filter(p => p.status === PICK_STATUS.PENDING).length;
+    const gradedCount = activePicks.filter(p =>
+      p.status === PICK_STATUS.WON || p.status === PICK_STATUS.LOST || p.status === PICK_STATUS.PUSH
     ).length;
 
     const pendingText = document.getElementById('pending-text');
     if (pendingText) {
-      pendingText.textContent = `${gradedCount}/7 results in • ${pendingCount} pending`;
+      pendingText.textContent = `${gradedCount}/${MAX_PICKS} results in • ${pendingCount} pending`;
     }
   }
 
@@ -1253,19 +1303,22 @@ class SportsIQ {
 
     section.classList.remove('hidden');
 
-    const resolvedCount = this.state.today.picks.filter(p =>
-      p.status === PICK_STATUS.WON || p.status === PICK_STATUS.LOST || p.status === PICK_STATUS.PUSH || p.status === PICK_STATUS.PASSED
+    const activeIndices = this.state.today.picks.map((p, i) => ({ pick: p, idx: i }))
+      .filter(({ pick }) => pick.choice === 'A' || pick.choice === 'B');
+
+    const resolvedCount = activeIndices.filter(({ pick }) =>
+      pick.status === PICK_STATUS.WON || pick.status === PICK_STATUS.LOST || pick.status === PICK_STATUS.PUSH
     ).length;
 
     if (status) {
-      status.textContent = `${resolvedCount}/7 resolved`;
+      status.textContent = `${resolvedCount}/${MAX_PICKS} resolved`;
     }
 
-    list.innerHTML = this.state.today.picks.map((pick, idx) => {
+    list.innerHTML = activeIndices.map(({ pick, idx }) => {
       const slatePick = this.slate.picks[idx];
       const sport = SPORTS[slatePick.sport] || { icon: '🎯', name: slatePick.sport };
       const isLock = this.state.today.lockOfDayIndex === idx;
-      const userChoice = pick.choice === 'PASS' ? { short: 'PASS' } : (pick.choice === 'A' ? slatePick.optionA : slatePick.optionB);
+      const userChoice = pick.choice === 'A' ? slatePick.optionA : slatePick.optionB;
 
       let statusClass = 'pending';
       let statusIcon = '🕐';
@@ -1283,10 +1336,6 @@ class SportsIQ {
         statusClass = 'push';
         statusIcon = '🔄';
         statusText = 'Push';
-      } else if (pick.status === PICK_STATUS.PASSED) {
-        statusClass = 'passed';
-        statusIcon = '⏭️';
-        statusText = 'Passed';
       }
 
       const gameStatus = getGameStatusDisplay(slatePick.gameTime, slatePick.status);
@@ -1352,13 +1401,15 @@ class SportsIQ {
   }
 
   showResultsSummary() {
-    const correct = this.state.today.picks.filter(p => p.status === PICK_STATUS.WON).length;
+    const activePicks = this.state.today.picks.filter(p => p.choice === 'A' || p.choice === 'B');
+    const correct = activePicks.filter(p => p.status === PICK_STATUS.WON).length;
+    const total = activePicks.length;
     const resultsSummary = document.getElementById('results-summary');
     if (resultsSummary) {
       resultsSummary.classList.remove('hidden');
       resultsSummary.innerHTML = `
         <div class="results-mini">
-          <span class="results-score-mini">${correct}/7</span>
+          <span class="results-score-mini">${correct}/${total}</span>
           <span class="results-label">Today's Score</span>
         </div>
       `;
@@ -1395,12 +1446,29 @@ class SportsIQ {
     // Normal mode
     if (this.state.today.submitted) return;
 
-    const isFirstPick = this.state.stats.allTime.totalPicks === 0 &&
-                        !this.state.today.picks.some(p => p.choice !== null);
-
     const previousChoice = this.state.today.picks[index].choice;
+    const currentSelected = this.getSelectedPickCount();
 
-    // If selecting PASS and this was the lock, clear the lock
+    if (choice === previousChoice) {
+      this.state.today.picks[index] = { choice: null, status: PICK_STATUS.UNSELECTED, isLockOfDay: false };
+      if (this.state.today.lockOfDayIndex === index) {
+        this.state.today.lockOfDayIndex = null;
+      }
+      this.saveState();
+      this.updateProgress();
+      this.checkSubmitButton();
+      this.renderPickCards();
+      return;
+    }
+
+    if ((choice === 'A' || choice === 'B') && (previousChoice !== 'A' && previousChoice !== 'B') && currentSelected >= MAX_PICKS) {
+      this.showToast(`Max ${MAX_PICKS} picks selected! Deselect one first.`);
+      return;
+    }
+
+    const isFirstPick = this.state.stats.allTime.totalPicks === 0 &&
+                        !this.state.today.picks.some(p => p.choice === 'A' || p.choice === 'B');
+
     if (choice === 'PASS' && this.state.today.lockOfDayIndex === index) {
       this.state.today.lockOfDayIndex = null;
     }
@@ -1604,14 +1672,15 @@ class SportsIQ {
     }
 
     if (this.state.today.submitted) return;
-    if (!this.state.today.picks.every(p => p.choice !== null)) return;
+    const selectedCount = this.state.today.picks.filter(p => p.choice === 'A' || p.choice === 'B').length;
+    if (selectedCount < MAX_PICKS) return;
 
-    // Mark picks as pending (or PASSED for PASS choices)
-    this.state.today.picks = this.state.today.picks.map((pick, idx) => ({
-      ...pick,
-      status: pick.choice === 'PASS' ? PICK_STATUS.PASSED : PICK_STATUS.PENDING,
-      isLockOfDay: this.state.today.lockOfDayIndex === idx
-    }));
+    this.state.today.picks = this.state.today.picks.map((pick, idx) => {
+      if (pick.choice === 'A' || pick.choice === 'B') {
+        return { ...pick, status: PICK_STATUS.PENDING, isLockOfDay: this.state.today.lockOfDayIndex === idx };
+      }
+      return { ...pick, choice: pick.choice || null, status: PICK_STATUS.PASSED, isLockOfDay: false };
+    });
 
     this.state.today.submitted = true;
     this.state.today.submittedAt = new Date().toISOString();
@@ -1683,9 +1752,8 @@ class SportsIQ {
       console.error('Failed to check real results:', error);
     }
 
-    // Check for any still pending
-    this.state.today.picks.forEach((pick, idx) => {
-      if (pick.status === PICK_STATUS.PENDING) {
+    this.state.today.picks.forEach((pick) => {
+      if ((pick.choice === 'A' || pick.choice === 'B') && pick.status === PICK_STATUS.PENDING) {
         allResolved = false;
       }
     });
@@ -1925,14 +1993,15 @@ class SportsIQ {
       return;
     }
 
-    // Prepare picks for the scoring engine
-    const picksForScoring = this.state.today.picks.map((pick, idx) => ({
+    const activePicks = this.state.today.picks.map((pick, idx) => ({ pick, idx }))
+      .filter(({ pick }) => pick.choice === 'A' || pick.choice === 'B');
+
+    const picksForScoring = activePicks.map(({ pick, idx }) => ({
       choice: pick.choice,
       isLockOfDay: idx === this.state.today.lockOfDayIndex
     }));
 
-    // Build results from pick statuses
-    const resultsForScoring = this.state.today.picks.map(pick => {
+    const resultsForScoring = activePicks.map(({ pick }) => {
       let correctAnswer = null;
       let status = 'pending';
 
@@ -1944,8 +2013,6 @@ class SportsIQ {
         status = 'final';
       } else if (pick.status === PICK_STATUS.PUSH) {
         status = 'push';
-      } else if (pick.status === PICK_STATUS.PASSED) {
-        status = 'final';
       }
 
       return { correctAnswer, status };
@@ -3382,7 +3449,7 @@ class SportsIQ {
     document.getElementById('streak-bar').style.width = `${streakPercent}%`;
 
     const bestScore = this.getBestDailyScore();
-    document.getElementById('best-daily-score').textContent = `${bestScore}/7`;
+    document.getElementById('best-daily-score').textContent = `${bestScore}/${MAX_PICKS}`;
 
     this.renderSportAccuracy();
     this.renderMarketAccuracy();
@@ -3414,13 +3481,13 @@ class SportsIQ {
       let colorClass = 'low';
       if (score >= 5) colorClass = 'medium';
       if (score >= 6) colorClass = 'high';
-      if (score === 7) colorClass = 'perfect';
+      if (score === MAX_PICKS) colorClass = 'perfect';
 
       const date = new Date(day.date);
       const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
 
       return `
-        <div class="day-dot ${colorClass}" title="${dateStr}: ${score}/7">
+        <div class="day-dot ${colorClass}" title="${dateStr}: ${score}/${MAX_PICKS}">
           <span class="day-score">${score}</span>
         </div>
       `;
@@ -3561,7 +3628,7 @@ class SportsIQ {
       return `
         <div class="history-item">
           <span class="history-date">${dateStr}</span>
-          <span class="history-score ${h.isPerfect ? 'perfect' : ''}">${h.score}/7</span>
+          <span class="history-score ${h.isPerfect ? 'perfect' : ''}">${h.score}/${MAX_PICKS}</span>
         </div>
       `;
     }).join('');

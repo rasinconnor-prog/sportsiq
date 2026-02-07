@@ -1043,6 +1043,62 @@ body {
 }
 
 /* ========================================
+   SPORT FILTER BAR
+   ======================================== */
+.sport-filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.sport-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sport-filter-pill {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sport-filter-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sport-filter-pill.active {
+  background: var(--theme-accent, #7c3aed);
+  border-color: var(--theme-accent, #7c3aed);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--theme-accent-glow, rgba(124, 58, 237, 0.4));
+}
+
+.sport-filter-pill .filter-count {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sport-filter-pill.active .filter-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ========================================
    PICK CARDS - PREMIUM GAME CARDS
    ======================================== */
 .picks-container {

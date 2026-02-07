@@ -187,7 +187,7 @@
           </span>
         </div>
         <div class="daily-progress">
-          <span class="progress-text"><span id="picks-made">0</span>/7</span>
+          <span class="progress-text"><span id="picks-made">0</span>/<span id="picks-total">7</span></span>
           <div class="mini-progress">
             <div class="mini-fill" id="mini-fill" style="width: 0%"></div>
           </div>
@@ -254,6 +254,15 @@
       <!-- Results Summary (shown after graded) -->
       <div class="results-summary hidden" id="results-summary">
         <!-- Populated by JS -->
+      </div>
+
+      <!-- Sport Filter Tabs -->
+      <div class="sport-filter-bar" id="sport-filter-bar">
+        <button class="sport-filter-pill active" data-sport="ALL">All</button>
+        <button class="sport-filter-pill" data-sport="NBA">🏀 NBA</button>
+        <button class="sport-filter-pill" data-sport="NFL">🏈 NFL</button>
+        <button class="sport-filter-pill" data-sport="NHL">🏒 NHL</button>
+        <button class="sport-filter-pill" data-sport="MLB">⚾ MLB</button>
       </div>
 
       <!-- Pick Cards Container -->

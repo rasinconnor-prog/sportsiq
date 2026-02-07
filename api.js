@@ -411,9 +411,8 @@ async function generateDailySlate() {
   const today = getTodayString();
   const cacheKey = `slate_${today}`;
 
-  // Check if we have a valid slate for today
   const cached = CacheManager.get(cacheKey);
-  if (cached && cached.picks?.length === 7) {
+  if (cached && cached.picks?.length > 0) {
     return cached;
   }
 
@@ -422,46 +421,32 @@ async function generateDailySlate() {
   const games = await fetchTodaysGames(['NBA', 'NFL', 'NHL', 'MLB']);
   const picks = [];
 
-  // Filter to games that haven't started yet or are early in progress
   const availableGames = games.filter(g => {
     const gameTime = new Date(g.gameTime);
     const now = new Date();
-    // Include games starting in the future or within 30 min of start
     return gameTime > new Date(now.getTime() - 30 * 60 * 1000);
   });
 
-  // Sort by start time
   availableGames.sort((a, b) => new Date(a.gameTime) - new Date(b.gameTime));
 
-  // Create picks from available games
   for (const game of availableGames) {
-    if (picks.length >= 7) break;
-
-    // Add spread pick if we have spread data
-    if (game.spread !== null && picks.length < 7) {
+    if (game.spread !== null) {
       picks.push(createRealPick(game, 'spread', picks.length + 1));
     }
-
-    // Add total pick for variety
-    if (game.overUnder !== null && picks.length < 7) {
+    if (game.overUnder !== null) {
       picks.push(createRealPick(game, 'total', picks.length + 1));
     }
   }
 
-  // If we don't have enough games, try to fill with moneyline picks
   for (const game of availableGames) {
-    if (picks.length >= 7) break;
-    if (game.moneyline && !picks.find(p => p.gameId === game.id)) {
+    if (game.moneyline && !picks.find(p => p.gameId === game.id && p.market === 'moneyline')) {
       picks.push(createRealPick(game, 'moneyline', picks.length + 1));
     }
   }
 
-  // Fallback: if still not enough, we need to show what we have
   if (picks.length === 0) {
     console.warn('No games available for today');
     API_CONFIG.USING_CACHED_DATA = true;
-
-    // Try to return yesterday's stale data
     const staleCached = CacheManager.getStale(cacheKey);
     if (staleCached) return staleCached;
   }
@@ -469,12 +454,11 @@ async function generateDailySlate() {
   const slate = {
     id: `slate_${today.replace(/-/g, '')}`,
     date: today,
-    picks: picks.slice(0, 7),
+    picks: picks,
     generatedAt: new Date().toISOString(),
     source: API_CONFIG.ODDS_API_KEY ? 'theOddsAPI+ESPN' : 'ESPN'
   };
 
-  // Cache the slate
   CacheManager.set(cacheKey, slate, API_CONFIG.CACHE_DURATION);
 
   return slate;
@@ -497,18 +481,16 @@ async function generateSlateForDate(dateStr) {
   availableGames.sort((a, b) => new Date(a.gameTime) - new Date(b.gameTime));
 
   for (const game of availableGames) {
-    if (picks.length >= 7) break;
-    if (game.spread !== null && picks.length < 7) {
+    if (game.spread !== null) {
       picks.push(createRealPick(game, 'spread', picks.length + 1));
     }
-    if (game.overUnder !== null && picks.length < 7) {
+    if (game.overUnder !== null) {
       picks.push(createRealPick(game, 'total', picks.length + 1));
     }
   }
 
   for (const game of availableGames) {
-    if (picks.length >= 7) break;
-    if (game.moneyline && !picks.find(p => p.gameId === game.id)) {
+    if (game.moneyline && !picks.find(p => p.gameId === game.id && p.market === 'moneyline')) {
       picks.push(createRealPick(game, 'moneyline', picks.length + 1));
     }
   }
@@ -516,7 +498,7 @@ async function generateSlateForDate(dateStr) {
   const slate = {
     id: `slate_${dateStr.replace(/-/g, '')}`,
     date: dateStr,
-    picks: picks.slice(0, 7),
+    picks: picks,
     generatedAt: new Date().toISOString(),
     source: 'ESPN'
   };
